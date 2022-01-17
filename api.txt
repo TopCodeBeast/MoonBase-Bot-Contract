@@ -1,0 +1,37 @@
+view方法：
+get_guild(guild_id: String) 
+return
+[{
+    guild_id: String,
+    role_id: String,
+    token_id: String,
+    amount: String,
+}]
+
+get_token(token_id: AccountId)
+return
+[{
+    guild_id: String,
+    role_id: String,
+    token_id: String,
+    amount: String,
+}]
+
+get_roles(role_id: String)
+return 
+{
+    guild_id: String,
+    role_id: String,
+    token_id: String,
+    amount: String,
+}
+
+call方法：
+Role {
+    guild_id: String,
+    role_id: String,
+    token_id: String,
+    amount: String,
+}
+set_roles(args: String, sign: String, pk: String)
+return null
