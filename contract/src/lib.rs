@@ -1,4 +1,6 @@
 
+use std::collections::HashMap;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::{U128, Base58CryptoHash, Base58PublicKey};
 use near_sdk::serde::{Serialize, Deserialize};
@@ -28,7 +30,7 @@ pub struct DiscordRoles {
     public_key: String,
     roles: LookupMap<String, Role>,
     guilds: LookupMap<String, UnorderedMap<String, bool>>,
-    tokens: UnorderedMap<AccountId, UnorderedMap<String, bool>>,
+    key_fields: UnorderedMap<(String, String), UnorderedMap<String, bool>>,
     upgrade: Upgrade
 }
 
@@ -38,8 +40,8 @@ pub struct DiscordRoles {
 pub struct Role {
     guild_id: String,
     role_id: String,
-    token_id: AccountId,
-    amount: U128,
+    fields: HashMap<String, String>,
+    key_field: (String, String),
 }
 
 
@@ -54,7 +56,7 @@ impl DiscordRoles {
             public_key: pk,
             roles: LookupMap::new(b"r".to_vec()),
             guilds: LookupMap::new(b"g".to_vec()),
-            tokens: UnorderedMap::new(b"t".to_vec()),
+            key_fields: UnorderedMap::new(b"k".to_vec()),
             upgrade: Upgrade::new(env::predecessor_account_id(), 0)
         }
       }
@@ -68,7 +70,7 @@ impl DiscordRoles {
         let roles: Vec<Role> = serde_json::from_str(&args).unwrap();
         let initial_storage_usage = env::storage_usage();
         for role in roles.iter() {
-            self.internal_set_role(role.guild_id.clone(), role.role_id.clone(), role.token_id.clone(), role.amount);
+            self.internal_set_role(role.guild_id.clone(), role.role_id.clone(), role.fields.clone(), role.key_field.clone());
         }
         refund_extra_storage_deposit(
             env::storage_usage() - initial_storage_usage,
@@ -79,20 +81,23 @@ impl DiscordRoles {
     pub fn del_role(&mut self, args: String, sign: String) {
         let sign: Vec<u8> = bs58::decode(sign).into_vec().unwrap();
         let pk: Vec<u8> = bs58::decode(self.public_key.clone()).into_vec().unwrap();
-        let role_id: String = serde_json::from_str(&args).unwrap();
+        let role_ids: Vec<String> = serde_json::from_str(&args).unwrap();
         verify(args.as_bytes().to_vec(), sign.into(), pk.into());
 
-        let role = self.roles.get(&role_id).unwrap();
+        for role_id in role_ids {
+            let role = self.roles.get(&role_id).unwrap();
 
-        let mut guild = self.guilds.get(&role.guild_id).unwrap();
-        guild.remove(&role_id);
-        self.guilds.insert(&role.guild_id, &guild);
+            let mut guild = self.guilds.get(&role.guild_id).unwrap();
+            guild.remove(&role_id);
+            self.guilds.insert(&role.guild_id, &guild);
 
-        let mut token = self.tokens.get(&role.token_id).unwrap();
-        token.remove(&role_id);
-        self.tokens.insert(&role.token_id, &token);
+            let mut key_field = self.key_fields.get(&role.key_field).unwrap();
+            key_field.remove(&role_id);
+            self.key_fields.insert(&role.key_field, &key_field);
 
-        self.roles.remove(&role_id);
+            self.roles.remove(&role_id);
+        }
+        
     }
 
 }

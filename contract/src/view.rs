@@ -17,8 +17,8 @@ impl DiscordRoles {
         roles
     }
     
-    pub fn get_token(&self, token_id: AccountId) -> Vec<Role> {
-        let roles = match self.tokens.get(&token_id) {
+    pub fn get_field(&self, field_key: String, field_value: String) -> Vec<Role> {
+        let roles = match self.key_fields.get(&(field_key, field_value)) {
             Some(v) => {
                 let mut vec: Vec<Role> = Vec::new();
                 for role_id in v.keys() {
@@ -36,8 +36,8 @@ impl DiscordRoles {
         self.roles.get(&role_id)
     }
 
-    pub fn get_token_list(&self) -> Vec<AccountId> {
-        self.tokens.keys().collect()
+    pub fn get_token_list(&self) -> Vec<(String, String)> {
+        self.key_fields.keys().collect()
     }
 }
 
