@@ -8,7 +8,7 @@ use near_sdk::serde_json::{json, self};
 use near_sdk::{env, near_bindgen, setup_alloc, AccountId, PanicOnDefault, bs58};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use upgrade::Upgrade;
-use utils::refund_extra_storage_deposit;
+use utils::{refund_extra_storage_deposit, get_hash};
 use utils::verify;
 //use wasm_sign::{Config, PKey};
 
@@ -81,21 +81,22 @@ impl DiscordRoles {
     pub fn del_role(&mut self, args: String, sign: String) {
         let sign: Vec<u8> = bs58::decode(sign).into_vec().unwrap();
         let pk: Vec<u8> = bs58::decode(self.public_key.clone()).into_vec().unwrap();
-        let role_ids: Vec<String> = serde_json::from_str(&args).unwrap();
+        let role_ids: Vec<Role> = serde_json::from_str(&args).unwrap();
         verify(args.as_bytes().to_vec(), sign.into(), pk.into());
 
-        for role_id in role_ids {
-            let role = self.roles.get(&role_id).unwrap();
+        for role in role_ids {
+            let hash = get_hash(role.guild_id, role.role_id, role.fields, role.key_field);
+            let role = self.roles.get(&hash).unwrap();
 
             let mut guild = self.guilds.get(&role.guild_id).unwrap();
-            guild.remove(&role_id);
+            guild.remove(&hash);
             self.guilds.insert(&role.guild_id, &guild);
 
             let mut key_field = self.key_fields.get(&role.key_field).unwrap();
-            key_field.remove(&role_id);
+            key_field.remove(&hash);
             self.key_fields.insert(&role.key_field, &key_field);
 
-            self.roles.remove(&role_id);
+            self.roles.remove(&hash);
         }
         
     }

@@ -32,3 +32,15 @@ pub(crate) fn verify(message: Vec<u8>, sign: Vec<u8>, pk: Vec<u8>) {
         Err(_) => panic!("verify error")
     }
 }
+
+pub(crate) fn get_hash(guild_id: String, role_id: String, fields: HashMap<String, String>, key_field: (String, String)) -> String {
+    let args_string = json!({
+        "guild_id": guild_id,
+        "role_id": role_id,
+        "fields": fields,
+        "key_field": key_field
+
+    }).to_string();
+    let hash = bs58::encode(env::sha256(args_string.as_bytes())).into_string();
+    hash
+}

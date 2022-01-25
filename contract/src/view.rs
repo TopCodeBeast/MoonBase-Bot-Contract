@@ -6,8 +6,8 @@ impl DiscordRoles {
         let roles = match self.guilds.get(&guild_id) {
             Some(v) => {
                 let mut vec: Vec<Role> = Vec::new();
-                for role_id in v.keys() {
-                    let role = self.roles.get(&role_id).unwrap();
+                for hash in v.keys() {
+                    let role = self.roles.get(&hash).unwrap();
                     vec.push(role);
                 }
                 vec
@@ -21,8 +21,8 @@ impl DiscordRoles {
         let roles = match self.key_fields.get(&(field_key, field_value)) {
             Some(v) => {
                 let mut vec: Vec<Role> = Vec::new();
-                for role_id in v.keys() {
-                    let role = self.roles.get(&role_id).unwrap();
+                for hash in v.keys() {
+                    let role = self.roles.get(&hash).unwrap();
                     vec.push(role);
                 }
                 vec
