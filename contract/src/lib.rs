@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::{U128, Base58CryptoHash, Base58PublicKey};
+use near_sdk::json_types::{U64, U128, Base58CryptoHash, Base58PublicKey};
 use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::serde_json::{json, self};
 use near_sdk::{env, near_bindgen, setup_alloc, AccountId, PanicOnDefault, bs58};
@@ -62,12 +62,13 @@ impl DiscordRoles {
       }
 
     #[payable]
-    pub fn set_roles(&mut self, args: String, sign: String) {
+    pub fn set_roles(&mut self, roles: Vec<Role>, timestamp: U64, sign: String) {
+        let timestamp = u64::from(timestamp);
+        assert!(timestamp - env::block_timestamp() < 120_000_000_000, "signature expired");
         let sign: Vec<u8> = bs58::decode(sign).into_vec().unwrap();
         let pk: Vec<u8> = bs58::decode(self.public_key.clone()).into_vec().unwrap();
-        verify(args.as_bytes().to_vec(), sign.into(), pk.into());
+        verify((env::predecessor_account_id().to_string() + &timestamp.to_string()).into_bytes(), sign.into(), pk.into());
         
-        let roles: Vec<Role> = serde_json::from_str(&args).unwrap();
         let initial_storage_usage = env::storage_usage();
         for role in roles.iter() {
             self.internal_set_role(role.guild_id.clone(), role.role_id.clone(), role.fields.clone(), role.key_field.clone());
@@ -78,13 +79,14 @@ impl DiscordRoles {
         );
     }
 
-    pub fn del_role(&mut self, args: String, sign: String) {
+    pub fn del_roles(&mut self, roles: Vec<Role>, timestamp: U64, sign: String) {
+        let timestamp = u64::from(timestamp);
+        assert!(timestamp - env::block_timestamp() < 120_000_000_000, "signature expired");
         let sign: Vec<u8> = bs58::decode(sign).into_vec().unwrap();
         let pk: Vec<u8> = bs58::decode(self.public_key.clone()).into_vec().unwrap();
-        let role_ids: Vec<Role> = serde_json::from_str(&args).unwrap();
-        verify(args.as_bytes().to_vec(), sign.into(), pk.into());
+        verify((env::predecessor_account_id().to_string() + &timestamp.to_string()).into_bytes(), sign.into(), pk.into());
 
-        for role in role_ids {
+        for role in roles {
             let hash = get_hash(role.guild_id, role.role_id, role.fields, role.key_field);
             let role = self.roles.get(&hash).unwrap();
 
