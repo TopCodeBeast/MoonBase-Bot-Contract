@@ -1,5 +1,5 @@
-Nepbot Contract
-==================
+moonbasebot Contract
+====================
 
 This [Vue] app was initialized with [create-near-app]
 
